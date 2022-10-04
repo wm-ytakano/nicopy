@@ -27,30 +27,10 @@ def VECTR_dot(a, b, c, d):
     return l
 
 
-EPS = -9.0e30
+EPS = 9.0e-30
 
 
-def xyz2latlon_xt(v):
-    n = v[:].shape[2]
-    ni = v[:].shape[1]
-    lat = np.empty([ni, n])
-    lon = np.empty([ni, n])
-    for j in range(ni):
-        for i in range(n):
-            lat[j, i], lon[j, i] = xyz2latlon_1(v[:, j, i])
-    return lat, lon
-
-
-def xyz2latlon_2(v):
-    n = v.shape[-1]
-    lat = np.empty([n])
-    lon = np.empty([n])
-    for nv in range(n):
-        lat[nv], lon[nv] = xyz2latlon_1(v[:, nv])
-    return lat, lon
-
-
-def xyz2latlon_1(v):
+def xyz2latlon(v):
     x = v[0]
     y = v[1]
     z = v[2]
@@ -59,15 +39,16 @@ def xyz2latlon_1(v):
     if length < EPS:
         lat = 0.0
         lon = 0.0
+        return lat, lon
 
     if z / length >= 1.0:  # vector is parallele to z axis.
         lat = np.arcsin(1.0)
         lon = 0.0
-        return
+        return lat, lon
     elif z / length <= -1.0:  # ! vector is parallele to z axis.
         lat = np.arcsin(-1.0)
         lon = 0.0
-        return
+        return lat, lon
     else:
         lat = np.arcsin(z / length)
 
@@ -75,7 +56,7 @@ def xyz2latlon_1(v):
 
     if length_h < EPS:
         lon = 0.0
-        return
+        return lat, lon
 
     if x / length_h >= 1.0:
         lon = np.arccos(1.0)
@@ -114,23 +95,11 @@ class grid_conv:
         self.ADM_nxyz = 3
         self.ADM_have_sgp = True  # tentative
         self.wk = np.empty([2, self.ADM_gall, 4, 3])  # ADM_TI to ADM_TJ
-        print(self.ADM_gall)
 
     def suf(self, j, i):
         # suffix = ADM_gall_1d * (j-1) + i
         suffix = self.ADM_gall_1d * (j) + i
         return suffix
-
-    def cg2ug(self, v):  # v is center point (x,y,z) cordinate
-        GRD_xt = self.center2vertex(v)
-        lat_t, lon_t = xyz2latlon_xt(GRD_xt)
-        lat_t = lat_t * 180.0 / np.pi
-        lon_t = lon_t * 180.0 / np.pi
-        lat_t = lat_t.reshape([-1, self.ADM_gall_1d, self.ADM_gall_1d])
-        lon_t = lon_t.reshape([-1, self.ADM_gall_1d, self.ADM_gall_1d])
-        vlat_t, vlon_t = self.pgrid(lat_t, lon_t)
-
-        return vlon_t, vlat_t
 
     def pgrid(self, lat_t, lon_t):
         #
